@@ -14,13 +14,13 @@
 #include <Servo.h>
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int button = 3;                   //the pin the button is connected to
-int seperatorPositions[] = {0,1,2};   //the states for the page seperator arm (full release, on page, holding page)
-int sweeperPositions[] = {0,1,2};  //the states for the turning arm (fully down, preloaded, turn)
-int bookmarkPositions[] = {0,1}; //state for bookmark (left side, right side)
-int seperatorPin = 0;
-int sweeperPin = 0;
-int bookmarkPin = 0;
+int button = 13;                   //the pin the button is connected to
+int seperatorPositions[] = {20,150,95};   //the states for the page seperator arm (full release, on page, holding page)
+int sweeperPositions[] = {136,110,10};  //the states for the turning arm (fully down, preloaded, turn)
+int bookmarkPositions[] = {0,180}; //state for bookmark (left side, right side)
+int seperatorPin = 5;
+int sweeperPin = 3;
+int bookmarkPin = 6;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -36,11 +36,13 @@ bool wasPressed = true;
 void setup() {
   Serial.begin(9600);
   pinMode(button, INPUT);
-  
   seperator.attach(seperatorPin);
   sweeper.attach(sweeperPin);
   bookmark.attach(bookmarkPin);
   Serial.println("The device is on!");
+  bookmark.write(bookmarkPositions[0]);
+  sweeper.write(sweeperPositions[0]);
+  seperator.write(seperatorPositions[0]);
 }
 
 void loop() {
@@ -88,11 +90,9 @@ void loop() {
 void forwardSequence(){
   Serial.println("Forward Sequence");
   sweeper.write(sweeperPositions[2]); //flip the page
-  seperator.write(seperatorPositions[0]); //retract the seperator arm
-  delay(5000);    //this is the time between sweeper returning and the preload sequence.  it exists to give time to allow manual override of a misflipped page
-
+  delay(1000);    
   sweeper.write(sweeperPositions[0]); //return the sweeper arm to natural state
-  delay(1000);
+  delay(2500);    //this is the time between sweeper returning and the preload sequence.  it exists to give time to allow manual override of a misflipped page
   preloadSequence();
 }
 
@@ -101,12 +101,21 @@ void preloadSequence(){
   Serial.println("Preload sequence!");
   seperator.write(seperatorPositions[1]); //engage the page
   delay(1000);
+
+  float count = 200;
+  for(float i= 0; i < count; i++){
+    int val = seperatorPositions[1] - (seperatorPositions[1] - seperatorPositions[2]) * i/count;
+    Serial.println(val);
+    seperator.write(val);
+    delay(5);
+  }
   seperator.write(seperatorPositions[2]); //lift the page
 
   delay(3000); //this is the amount of time for static to release additional pages
 
   sweeper.write(sweeperPositions[1]); //pre load the page
   delay(1000);
+  seperator.write(seperatorPositions[0]); //retract the seperator arm
   Serial.println("Sequence Finished!");
 }
 
