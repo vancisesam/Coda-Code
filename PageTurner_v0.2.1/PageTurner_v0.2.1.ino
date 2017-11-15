@@ -102,15 +102,8 @@ void preloadSequence(){
   seperator.write(seperatorPositions[1]); //engage the page
   delay(1000);
 
-  float count = 200;
-  for(float i= 0; i < count; i++){
-    int val = seperatorPositions[1] - (seperatorPositions[1] - seperatorPositions[2]) * i/count;
-    Serial.println(val);
-    seperator.write(val);
-    delay(5);
-  }
-  seperator.write(seperatorPositions[2]); //lift the page
-
+  moveSlow(seperator, seperatorPositions[1], seperatorPositions[2], 1000); //lift the page
+  
   delay(3000); //this is the amount of time for static to release additional pages
 
   sweeper.write(sweeperPositions[1]); //pre load the page
@@ -129,6 +122,21 @@ void bookmarkSequence(){
   bookmark.write(bookmarkPositions[0]); //return the bookmark
   delay(1000);
   preloadSequence();
+}
+
+void moveSlow(Servo m, int from, int to, int timer){
+  float count = timer/5;
+  for(float i= 0; i < count; i++){
+    int val = 0;
+    if(from > to){
+      val = from - (from - to) * i/count;
+    }
+    else{
+      val = from + (to - from) * i/count;
+    }
+    m.write(val);
+    delay(5);
+  }
 }
 
 
