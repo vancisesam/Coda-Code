@@ -15,8 +15,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int button = 13;                   //the pin the button is connected to
-int seperatorPositions[] = {20,150,95};   //the states for the page seperator arm (full release, on page, holding page)
-int sweeperPositions[] = {136,110,10};  //the states for the turning arm (fully down, preloaded, turn)
+int seperatorPositions[] = {20,137, 80};   //the states for the page seperator arm (full release, on page, holding page)
+int sweeperPositions[] = {148, 125,30};  //the states for the turning arm (fully down, preloaded, turn)
 int bookmarkPositions[] = {0,180}; //state for bookmark (left side, right side)
 int seperatorPin = 5;
 int sweeperPin = 3;
@@ -45,9 +45,8 @@ void setup() {
   seperator.write(seperatorPositions[0]);
 }
 
-void loop() {
+void loop(){
   bool buttonState = digitalRead(button) == HIGH;
-  //Serial.println(numPresses);
   if(buttonState && !wasPressed){   //just depressed the button
     numPresses++;
     if(numPresses == 2){
@@ -91,24 +90,23 @@ void forwardSequence(){
   Serial.println("Forward Sequence");
   sweeper.write(sweeperPositions[2]); //flip the page
   delay(1000);    
-  sweeper.write(sweeperPositions[0]); //return the sweeper arm to natural state
-  delay(2500);    //this is the time between sweeper returning and the preload sequence.  it exists to give time to allow manual override of a misflipped page
+  moveSlow(sweeper, sweeperPositions[2], sweeperPositions[0], 2000);  //return the sweeper arm to natural state
+  delay(1500);    //this is the time between sweeper returning and the preload sequence.  it exists to give time to allow manual override of a misflipped page
   preloadSequence();
 }
 
-//sweeper must be fully down on the left, and seperator must be fully retracted
+//sweeper must be fully down on the right, and seperator must be fully retracted
 void preloadSequence(){
   Serial.println("Preload sequence!");
   seperator.write(seperatorPositions[1]); //engage the page
-  delay(1000);
+  delay(1500);
 
-  moveSlow(seperator, seperatorPositions[1], seperatorPositions[2], 1000); //lift the page
+  moveSlow(seperator, seperatorPositions[1], seperatorPositions[2], 1500); //lift the page
   
-  delay(3000); //this is the amount of time for static to release additional pages
+  //delay(500); //this is the amount of time for static to release additional pages
+  moveSlow(sweeper, sweeperPositions[0], sweeperPositions[1], 700); //pre load the page
 
-  sweeper.write(sweeperPositions[1]); //pre load the page
-  delay(1000);
-  seperator.write(seperatorPositions[0]); //retract the seperator arm
+  moveSlow(seperator, seperatorPositions[2], seperatorPositions[0], 500);  //retract the seperator arm
   Serial.println("Sequence Finished!");
 }
 
@@ -119,8 +117,7 @@ void bookmarkSequence(){
 
   bookmark.write(bookmarkPositions[1]); //flip the bookmark
   delay(1000);
-  bookmark.write(bookmarkPositions[0]); //return the bookmark
-  delay(1000);
+  moveSlow(bookmark, bookmarkPositions[1], bookmarkPositions[0], 1000); //return the bookmark
   preloadSequence();
 }
 
