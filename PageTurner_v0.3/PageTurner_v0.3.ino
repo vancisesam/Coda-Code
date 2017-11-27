@@ -12,7 +12,7 @@ int separatorEndstop = 0;            //the pin for the separator photointerrupto
 int currentSensor = 0;              //the pin for the current sensing device
 int sweeperEndstop = 0;           //the end stop photointerruptor for the sweeper
 int sweeperMidsensor = 0;         //the sweeper midsensor
-int bookmarkSensors[] = {0,180}; //the pins for the bookmark sensors (left, right)
+int bookmarkSensors[] = {0,0}; //the pins for the bookmark sensors (left, right)
 
 int separatorPins[] = {0,0,0};             //(PWM, input1, input2) for separator motor
 int sweeperPins[] = {0,0,0};               //sweeper motor
@@ -110,14 +110,22 @@ void preloadSequence(){
   Serial.println("Sequence Finished!");
 }
 
+
 void bookmarkSequence(){
   Serial.println("Bookmark Sequence!");
-  //get the sweeper and separator out of the way
+  //get the sweeper out of the way
+  motorWrite(-10, separatorPins); 
+  while(digitalRead(sweeperMidsensor) == triggerState){};  //still in the first photointerruptor
+  while(!digitalRead(sweeperMidsensor) == triggerState){}; //moved to the second photointerruptor
+  motorWrite(0, separatorPins);
   
-
   //flip the bookmark
+  motorWrite(10, bookmarkPins);
+  while(!digitalRead(bookmarkSensors[1]) == triggerState){};  //move to the right
+  motorWrite(-10, bookmarkPins);
+  while(!digitalRead(bookmarkSensors[0]) == triggerState){};  //move back to the left
+  motorWrite(0, bookmarkPins);
   
-  //return the bookmark
   preloadSequence();
 }
 
