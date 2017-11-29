@@ -3,20 +3,25 @@
 */
 /////////////////////////////////////////////////////////////////////////////////////////
 int doubleTapThreshold = 400;
-bool triggerState = HIGH;
+bool triggerState = LOW;
+int batteryThreshold = 800;
 int forceThreshold = 0;             //current threshold for the analog read which signals sufficient pressure on the separator arm
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int button = 0;                   //the pin the button is connected to
-int separatorEndstop = 0;            //the pin for the separator photointerruptor
-int currentSensor = 0;              //the pin for the current sensing device
-int sweeperEndstop = 0;           //the end stop photointerruptor for the sweeper
-int sweeperMidsensor = 0;         //the sweeper midsensor
-int bookmarkSensors[] = {0,0}; //the pins for the bookmark sensors (left, right)
+int button = A6;                      //the pin the button is connected to
+int triggerMonitor = A7;                //the battery monitor for the footpedal
+int deviceMonitor = A5;               //the battery monitor for the device
+int deviceLed[] = {A0, A1};           //green, red
+int pedalLed[] = {12, 13};            //green, red
+int separatorEndstop = 0;             //the pin for the separator photointerruptor
+int currentSensor = 2;                //the pin for the current sensing device
+int sweeperEndstop = 0;               //the end stop photointerruptor for the sweeper
+int sweeperMidsensor = 0;             //the sweeper midsensor
+int bookmarkSensors[] = {0,0};        //the pins for the bookmark sensors (left, right)
 
-int separatorPins[] = {0,0,0};             //(PWM, input1, input2) for separator motor
-int sweeperPins[] = {0,0,0};               //sweeper motor
-int bookmarkPins[] = {0,0,0};              //bookmark motor
+int separatorPins[] = {5,3,4};        //(PWM, input1, input2) for separator motor
+int sweeperPins[] = {A4,A2,A3};       //sweeper motor
+int bookmarkPins[] = {A1,A2,A3};      //bookmark motor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -26,8 +31,10 @@ bool wasPressed = true;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(button, INPUT);
-  
+  pinMode(deviceLed[0], OUTPUT);
+  pinMode(deviceLed[1], OUTPUT);
+  pinMode(pedalLed[0], OUTPUT);
+  pinMode(pedalLed[1], OUTPUT);
 
 
   Serial.println("The device is on!");
@@ -138,13 +145,38 @@ void motorWrite(int motorSpeed, int pins[]){
  {  digitalWrite(pins[1], LOW);
     digitalWrite(pins[2], HIGH);
  }
- else                         // it's reverse
+ else if(motorSpeed < 0)                         // it's reverse
  {  digitalWrite(pins[1], HIGH);
     digitalWrite(pins[2], LOW);
- } 
+ }
+ else{  //its off
+    digitalWrite(pins[1], LOW);
+    digitalWrite(pins[2], LOW);
+    return;
+ }
  motorSpeed = abs(motorSpeed);
  motorSpeed = constrain(motorSpeed, 0, 255);   // Just in case...
  analogWrite(pins[0], motorSpeed);
+}
+
+void checkBatteries(){
+  if(analogRead(deviceMonitor)<batteryThreshold)){
+    digitalWrite(deviceLed[1], HIGH);
+  }
+  else{
+    digitalWrite(deviceLed[0], HIGH);
+  }
+  if(digitalRead(triggerMonitor)==HIGH){
+   digitalWrite(pedalLed[1], HIGH);
+  }
+  else{
+    digitalWrite(pedalLed[0], HIGH);
+  }
+  delay(1000);
+  digitalWrite(deviceLed[0], LOW);
+  digitalWrite(deviceLed[0], LOW);
+  digitalWrite(pedalLed[0], LOW);
+  digitalWrite(pedalLed[0], LOW);
 }
 
 
