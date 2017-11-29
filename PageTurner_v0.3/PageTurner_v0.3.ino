@@ -160,7 +160,7 @@ void motorWrite(int motorSpeed, int pins[]){
 }
 
 void checkBatteries(){
-  if(analogRead(deviceMonitor)<batteryThreshold)){
+  if(analogRead(deviceMonitor)<batteryThreshold){
     digitalWrite(deviceLed[1], HIGH);
   }
   else{
