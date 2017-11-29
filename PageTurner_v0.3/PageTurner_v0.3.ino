@@ -20,8 +20,8 @@ int sweeperMidsensor = 0;             //the sweeper midsensor
 int bookmarkSensors[] = {0,0};        //the pins for the bookmark sensors (left, right)
 
 int separatorPins[] = {5,3,4};        //(PWM, input1, input2) for separator motor
-int sweeperPins[] = {A4,A2,A3};       //sweeper motor
-int bookmarkPins[] = {A1,A2,A3};      //bookmark motor
+int sweeperPins[] = {10,A2,A3};       //sweeper motor
+int bookmarkPins[] = {11,A2,A3};      //bookmark motor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
