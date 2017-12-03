@@ -3,25 +3,27 @@
 */
 /////////////////////////////////////////////////////////////////////////////////////////
 int doubleTapThreshold = 400;
-bool triggerState = LOW;
+bool triggerState = HIGH;
 int batteryThreshold = 800;
 int forceThreshold = 0;             //current threshold for the analog read which signals sufficient pressure on the separator arm
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int button = A6;                      //the pin the button is connected to
-int triggerMonitor = A7;                //the battery monitor for the footpedal
-int deviceMonitor = A5;               //the battery monitor for the device
-int deviceLed[] = {A0, A1};           //green, red
-int pedalLed[] = {12, 13};            //green, red
-int separatorEndstop = 0;             //the pin for the separator photointerruptor
-int currentSensor = 2;                //the pin for the current sensing device
-int sweeperEndstop = 0;               //the end stop photointerruptor for the sweeper
-int sweeperMidsensor = 0;             //the sweeper midsensor
-int bookmarkSensors[] = {0,0};        //the pins for the bookmark sensors (left, right)
+int deviceLed = A1;
+int pedalLed = A0; 
 
-int separatorPins[] = {5,3,4};        //(PWM, input1, input2) for separator motor
-int sweeperPins[] = {10,A2,A3};       //sweeper motor
-int bookmarkPins[] = {11,A2,A3};      //bookmark motor
+int button = A7; //the pin the button is connected to
+int triggerMonitor = A6; // the pin for the trigger power monitor
+int deviceMonitor = A5; // the pin for the battery monitor
+
+int currentSensor = A4;              //the pin for the current sensing device
+
+int separatorEndstop = 8;            //the pin for the separator photointerruptor
+int sweeperSensors[] = {9,10,A3};           //the end stop photointerruptor for the sweeper
+int bookmarkSensors[] = {11,12}; //the pins for the bookmark sensors (left, right)
+
+int separatorPins[] = {5,7,2};             //(PWM, input1, input2) for separator motor
+int sweeperPins[] = {6,A2,4};               //sweeper motor
+int bookmarkPins[] = {3,A2,4};              //bookmark motor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -31,18 +33,20 @@ bool wasPressed = true;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(deviceLed[0], OUTPUT);
-  pinMode(deviceLed[1], OUTPUT);
-  pinMode(pedalLed[0], OUTPUT);
-  pinMode(pedalLed[1], OUTPUT);
-
+  pinMode(deviceLed, OUTPUT);
+  pinMode(pedalLed, OUTPUT);
+  digitalWrite(pedalLed, HIGH);
+  digitalWrite(deviceLed, HIGH);
 
   Serial.println("The device is on!");
   bootup();
 }
 
 void loop(){
-  bool buttonState = digitalRead(button) == HIGH;
+  
+  bool buttonState = analogRead(button) > 500;
+  Serial.println(buttonState);
+  return;
   if(buttonState && !wasPressed){   //just depressed the button
     numPresses++;
     if(numPresses == 2){
@@ -87,14 +91,12 @@ void forwardSequence(){
 
   //flip the page
   motorWrite(10, sweeperPins);  //flipper motor forward
-  while(!digitalRead(sweeperEndstop) == triggerState){};
+  while(!digitalRead(sweeperSensors[2]) == triggerState){};
   motorWrite(0, sweeperPins); //flipper stopped
   
   //return the sweeper arm to natural state
   motorWrite(-10, sweeperPins);
-  while(!digitalRead(sweeperMidsensor) == triggerState){}; // first time past photointerruptor
-  while(digitalRead(sweeperMidsensor) == triggerState){};  //in the first photointerruptor
-  while(!digitalRead(sweeperMidsensor) == triggerState){}; //second time in the photointerruptor
+  while(!digitalRead(sweeperSensors[0]) == triggerState){}; 
   motorWrite(0, sweeperPins);
   
   preloadSequence();
@@ -109,8 +111,7 @@ void preloadSequence(){
   motorWrite(-10, separatorPins); //begin retracting the arm 
   delay(500);  //this is the magic time to wait before bringing up the sweeper arm for preload
   motorWrite(10, sweeperPins);
-  while(digitalRead(sweeperMidsensor) == triggerState){};  //still in the first photointerruptor
-  while(!digitalRead(sweeperMidsensor) == triggerState){}; //second time in the photointerruptor
+  while(!digitalRead(sweeperSensors[1]) == triggerState){};  //move arm up
   motorWrite(0, sweeperPins);
   while(!digitalRead(separatorEndstop) == triggerState){};
   motorWrite(0, separatorPins);
@@ -121,10 +122,9 @@ void preloadSequence(){
 void bookmarkSequence(){
   Serial.println("Bookmark Sequence!");
   //get the sweeper out of the way
-  motorWrite(-10, separatorPins); 
-  while(digitalRead(sweeperMidsensor) == triggerState){};  //still in the first photointerruptor
-  while(!digitalRead(sweeperMidsensor) == triggerState){}; //moved to the second photointerruptor
-  motorWrite(0, separatorPins);
+  motorWrite(-10, sweeperPins); 
+  while(!digitalRead(sweeperSensors[0]) == triggerState){};
+  motorWrite(0, sweeperPins);
   
   //flip the bookmark
   motorWrite(10, bookmarkPins);
@@ -160,23 +160,26 @@ void motorWrite(int motorSpeed, int pins[]){
 }
 
 void checkBatteries(){
+  bool blinkDevice = false;
+  bool blinkTrigger = false;
   if(analogRead(deviceMonitor)<batteryThreshold){
-    digitalWrite(deviceLed[1], HIGH);
-  }
-  else{
-    digitalWrite(deviceLed[0], HIGH);
+    blinkDevice = true;
   }
   if(digitalRead(triggerMonitor)==HIGH){
-   digitalWrite(pedalLed[1], HIGH);
+   blinkTrigger = false;
   }
-  else{
-    digitalWrite(pedalLed[0], HIGH);
+
+  for(int i = 0; i< 4; i++){
+    if(blinkDevice){
+      digitalWrite(deviceLed, LOW); 
+    }
+    if(blinkTrigger){
+      digitalWrite(pedalLed, LOW);
+    }
+    delay(500);
+    digitalWrite(deviceLed,HIGH); 
+    digitalWrite(pedalLed, HIGH);
   }
-  delay(1000);
-  digitalWrite(deviceLed[0], LOW);
-  digitalWrite(deviceLed[0], LOW);
-  digitalWrite(pedalLed[0], LOW);
-  digitalWrite(pedalLed[0], LOW);
 }
 
 
