@@ -110,8 +110,8 @@ void preloadSequence(){
   //engage the page
   motorWrite(20, separatorPins);
   float force = 0;
-  while(force < forceThreshold){
-    Serial.println(force);
+  unsigned long  initialTime = millis();
+  while((force < forceThreshold) && ((millis() - initialTime) > 500)){
     force = getAvgCurrent(analogRead(currentSensor));
   }; //read the current from the motor to measure the force
   motorWrite(-12, separatorPins); //begin retracting the arm 
