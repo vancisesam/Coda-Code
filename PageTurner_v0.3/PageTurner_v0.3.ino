@@ -5,7 +5,7 @@
 int doubleTapThreshold = 400;
 bool triggerState = LOW;
 int batteryThreshold = 800;
-int forceThreshold = 25;             //current threshold for the analog read which signals sufficient pressure on the separator arm
+float forceThreshold = 0.13;             //current threshold for the analog read which signals sufficient pressure on the separator arm
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int deviceLed = A1;
@@ -27,7 +27,8 @@ int sweeperPins[] = {6,A2,4};               //sweeper motor
 int bookmarkPins[] = {3,A2,4};              //bookmark motor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+#define MOVING_AVG_SIZE 500
+int currentQueue[MOVING_AVG_SIZE];
 int numPresses = 0;
 unsigned long releaseTime;
 bool wasPressed = true;
@@ -89,12 +90,12 @@ void forwardSequence(){
   Serial.println("Forward Sequence");
 
   //flip the page
-  motorWrite(-100, sweeperPins);  //flipper motor forward
+  motorWrite(-110, sweeperPins);  //flipper motor forward
   while(!digitalRead(sweeperSensors[2]) == triggerState){};
   motorWrite(0, sweeperPins); //flipper stopped
   
   //return the sweeper arm to natural state
-  motorWrite(50, sweeperPins);
+  motorWrite(25, sweeperPins);
   while(!digitalRead(sweeperSensors[0]) == triggerState){}; 
   motorWrite(0, sweeperPins);
   
@@ -103,17 +104,19 @@ void forwardSequence(){
 
 //sweeper must be fully down on the right, and separator must be fully retracted
 void preloadSequence(){
+  Serial.println("DO IT NOW");
+  delay(2000);
   Serial.println("Preload sequence!");
   //engage the page
-  motorWrite(60, separatorPins);
-  int force = analogRead(currentSensor);
+  motorWrite(20, separatorPins);
+  float force = 0;
   while(force < forceThreshold){
     Serial.println(force);
-    force = analogRead(currentSensor);
+    force = getAvgCurrent(analogRead(currentSensor));
   }; //read the current from the motor to measure the force
-  motorWrite(-30, separatorPins); //begin retracting the arm 
-  delay(100);  //this is the magic time to wait before bringing up the sweeper arm for preload
-  motorWrite(-50, sweeperPins);
+  motorWrite(-12, separatorPins); //begin retracting the arm 
+  delay(1500);  //this is the magic time to wait before bringing up the sweeper arm for preload
+  motorWrite(-20, sweeperPins);
   bool runSweeper = true;
   bool sweepFinished = false;
   bool runSeparator = true;
@@ -158,6 +161,7 @@ void bookmarkSequence(){
 }
 
 void bootup(){
+  setupAvg();
   Serial.println("Bootup Finished!");
 }
 
@@ -178,6 +182,28 @@ void motorWrite(int motorSpeed, int pins[]){
  motorSpeed = abs(motorSpeed);
  motorSpeed = constrain(motorSpeed, 0, 255);   // Just in case...
  analogWrite(pins[0], motorSpeed);
+}
+void setupAvg(){
+  for(int i = 0; i < MOVING_AVG_SIZE; i++){
+    currentQueue[i] = 0;
+  }
+}
+
+float getAvgCurrent(int newCurrent){
+  int dummy = newCurrent;
+  float sum = newCurrent;
+  for(int i = 1; i < MOVING_AVG_SIZE; i++){
+    currentQueue[i-1] = dummy;
+    dummy = currentQueue[i];
+    sum += currentQueue[i-1];
+  }
+  currentQueue[0] = newCurrent;
+  Serial.print("total:  ");
+  Serial.println(sum);
+  float avg = sum/MOVING_AVG_SIZE;
+  Serial.print("avg: ");
+  Serial.println(avg);
+  return avg;
 }
 
 void checkBatteries(){

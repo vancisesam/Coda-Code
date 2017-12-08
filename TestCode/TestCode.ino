@@ -69,18 +69,18 @@ void loop(){
   Serial.println(digitalRead(sweeperSensors[2]));
 
 //  Motor Tests
-//  motorWrite(15, separatorPins);
-//  motorWrite(15, sweeperPins);
-//  delay(300);
-//  motorWrite(-15, sweeperPins);
-//  motorWrite(-15, separatorPins);
-//  delay(300);
-//  motorWrite(16, separatorPins);
-//  motorWrite(16, sweeperPins);
-//  delay(15);
-//  motorWrite(0, sweeperPins);
-//  motorWrite(0, separatorPins);
-//  delay(1000);
+  motorWrite(30, separatorPins);
+  motorWrite(50, sweeperPins);
+  delay(400);
+  motorWrite(-50, sweeperPins);
+  motorWrite(-30, separatorPins);
+  delay(400);
+  motorWrite(16, separatorPins);
+  motorWrite(16, sweeperPins);
+  delay(15);
+  motorWrite(0, sweeperPins);
+  motorWrite(0, separatorPins);
+  delay(1000);
 
 //  Current Sensing (Sensing on the board in the range of mV but not sensing on Arduino)
 //motorWrite(-50, separatorPins);
