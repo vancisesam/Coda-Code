@@ -5,7 +5,7 @@
 int doubleTapThreshold = 400;
 bool triggerState = LOW;
 int batteryThreshold = 800;
-float forceThreshold = 0.13;             //current threshold for the analog read which signals sufficient pressure on the separator arm
+float forceThreshold = 0.03;             //current threshold for the analog read which signals sufficient pressure on the separator arm
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int deviceLed = A1;
@@ -15,16 +15,16 @@ int button = A7; //the pin the button is connected to
 int triggerMonitor = A6; // the pin for the trigger power monitor
 int deviceMonitor = A5; // the pin for the battery monitor
 
-int currentSensor = A4;              //the pin for the current sensing device
+int currentSensor = A2;              //the pin for the current sensing device
 
-int separatorEndstop = 12;            //the pin for the separator photointerruptor
-int sweeperSensors[] = {10,8,11};           //the end stop photointerruptor for the sweeper
-int bookmarkSensors[] = {A3,9}; //the pins for the bookmark sensors (left, right)
+int separatorEndstop = A4;            //the pin for the separator photointerruptor
+int sweeperSensors[] = {11,9,12};           //the end stop photointerruptor for the sweeper
+int bookmarkSensors[] = {A3,10}; //the pins for the bookmark sensors (left, right)
 
 
 int separatorPins[] = {5,7,2};             //(PWM, input1, input2) for separator motor
-int sweeperPins[] = {6,A2,4};               //sweeper motor
-int bookmarkPins[] = {3,A2,4};              //bookmark motor
+int sweeperPins[] = {6,8,4};               //sweeper motor
+int bookmarkPins[] = {3,8,4};              //bookmark motor
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define MOVING_AVG_SIZE 500
@@ -37,6 +37,10 @@ void setup() {
   Serial.begin(9600);
   pinMode(deviceLed, OUTPUT);
   pinMode(pedalLed, OUTPUT);
+  pinMode(separatorPins[1], OUTPUT);
+  pinMode(separatorPins[2], OUTPUT);
+  pinMode(sweeperPins[1], OUTPUT);
+  pinMode(sweeperPins[2], OUTPUT);
   digitalWrite(pedalLed, HIGH);
   digitalWrite(deviceLed, HIGH);
 
@@ -90,12 +94,12 @@ void forwardSequence(){
   Serial.println("Forward Sequence");
 
   //flip the page
-  motorWrite(-110, sweeperPins);  //flipper motor forward
+  motorWrite(-100, sweeperPins);  //flipper motor forward
   while(!digitalRead(sweeperSensors[2]) == triggerState){};
   motorWrite(0, sweeperPins); //flipper stopped
   
   //return the sweeper arm to natural state
-  motorWrite(25, sweeperPins);
+  motorWrite(50, sweeperPins);
   while(!digitalRead(sweeperSensors[0]) == triggerState){}; 
   motorWrite(0, sweeperPins);
   
@@ -104,19 +108,24 @@ void forwardSequence(){
 
 //sweeper must be fully down on the right, and separator must be fully retracted
 void preloadSequence(){
-  Serial.println("DO IT NOW");
-  delay(2000);
+//  Serial.println("DO IT NOW");
+//  delay(2000);
   Serial.println("Preload sequence!");
   //engage the page
-  motorWrite(20, separatorPins);
+  motorWrite(30, separatorPins);
   float force = 0;
   unsigned long  initialTime = millis();
-  while((force < forceThreshold) && ((millis() - initialTime) > 500)){
+  while(true){
     force = getAvgCurrent(analogRead(currentSensor));
+    Serial.println(force);
+    if((millis() - initialTime) > 100 && (force > forceThreshold)){
+      break;
+    }
+    
   }; //read the current from the motor to measure the force
-  motorWrite(-12, separatorPins); //begin retracting the arm 
+  motorWrite(-20, separatorPins); //begin retracting the arm 
   delay(1500);  //this is the magic time to wait before bringing up the sweeper arm for preload
-  motorWrite(-20, sweeperPins);
+  motorWrite(-50, sweeperPins);
   bool runSweeper = true;
   bool sweepFinished = false;
   bool runSeparator = true;

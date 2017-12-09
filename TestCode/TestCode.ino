@@ -10,19 +10,20 @@ int forceThreshold = 0;             //current threshold for the analog read whic
 int powerIndicator = A1;
 int triggerIndicator = A0; 
 
-int button = A6; //the pin the button is connected to
-int triggerPower = A7; // the pin for the trigger power
-int batteryMonitor = A5; // the pin for the battery monitor
+int button = A7; //the pin the button is connected to
+int triggerMonitor = A6; // the pin for the trigger power monitor
+int deviceMonitor = A5; // the pin for the battery monitor
 
-int currentSensor = A4;              //the pin for the current sensing device
+int currentSensor = A2;              //the pin for the current sensing device
 
-int separatorEndstop = 8;            //the pin for the separator photointerruptor
-int sweeperSensors[] = {9,10,A3};           //the end stop photointerruptor for the sweeper
-int bookmarkSensors[] = {11,12}; //the pins for the bookmark sensors (left, right)
+int separatorEndstop = A4;            //the pin for the separator photointerruptor
+int sweeperSensors[] = {11,9,12};           //the end stop photointerruptor for the sweeper
+int bookmarkSensors[] = {A3,10}; //the pins for the bookmark sensors (left, right)
+
 
 int separatorPins[] = {5,7,2};             //(PWM, input1, input2) for separator motor
-int sweeperPins[] = {6,A2,4};               //sweeper motor
-int bookmarkPins[] = {3,A2,4};              //bookmark motor
+int sweeperPins[] = {6,8,4};               //sweeper motor
+int bookmarkPins[] = {3,8,4};              //bookmark motor
 
  
 
@@ -69,18 +70,23 @@ void loop(){
   Serial.println(digitalRead(sweeperSensors[2]));
 
 //  Motor Tests
-  motorWrite(30, separatorPins);
-  motorWrite(50, sweeperPins);
-  delay(400);
-  motorWrite(-50, sweeperPins);
-  motorWrite(-30, separatorPins);
-  delay(400);
-  motorWrite(16, separatorPins);
-  motorWrite(16, sweeperPins);
-  delay(15);
-  motorWrite(0, sweeperPins);
-  motorWrite(0, separatorPins);
-  delay(1000);
+//  motorWrite(30, separatorPins);
+//  motorWrite(50, sweeperPins);
+//  motorWrite(50, bookmarkPins);
+//  
+//  delay(500);
+//  motorWrite(-50, sweeperPins);
+//  motorWrite(-30, separatorPins);
+//  motorWrite(-50, bookmarkPins);
+//  delay(500);
+//  motorWrite(16, separatorPins);
+//  motorWrite(16, sweeperPins);
+//  motorWrite(20, bookmarkPins);
+//  delay(15);
+//  motorWrite(0, sweeperPins);
+//  motorWrite(0, separatorPins);
+//  motorWrite(0, bookmarkPins);
+//  delay(1000);
 
 //  Current Sensing (Sensing on the board in the range of mV but not sensing on Arduino)
 //motorWrite(-50, separatorPins);
