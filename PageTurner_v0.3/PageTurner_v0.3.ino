@@ -5,7 +5,9 @@
 int doubleTapThreshold = 400;
 bool triggerState = LOW;
 int batteryThreshold = 800;
-float forceThreshold = 0.03;             //current threshold for the analog read which signals sufficient pressure on the separator arm
+float forceThreshold = 0.023;             //current threshold for the analog read which signals sufficient pressure on the separator arm
+int forceHoldTime = 380;                      //amount of time (ms) the separator arm holds onto page
+int preloadDelay = 2700;                  //amount of time (ms) between separator arm retraction and sweeper preload
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int deviceLed = A1;
@@ -49,7 +51,6 @@ void setup() {
 }
 
 void loop(){
-  
   bool buttonState = analogRead(button) > 500;
   if(buttonState && !wasPressed){   //just depressed the button
     numPresses++;
@@ -92,61 +93,109 @@ void loop(){
  */
 void forwardSequence(){
   Serial.println("Forward Sequence");
-
+  //digitalWrite(deviceLed, HIGH);
   //flip the page
-  motorWrite(-100, sweeperPins);  //flipper motor forward
+  motorWrite(100, sweeperPins);  //flipper motor forward
+
   while(!digitalRead(sweeperSensors[2]) == triggerState){};
-  motorWrite(0, sweeperPins); //flipper stopped
+  digitalWrite(pedalLed, LOW);
+  //motorWrite(0, sweeperPins); //flipper stopped
+
   
   //return the sweeper arm to natural state
-  motorWrite(50, sweeperPins);
-  while(!digitalRead(sweeperSensors[0]) == triggerState){}; 
-  motorWrite(0, sweeperPins);
   
+  //motorWrite(0, sweeperPins);
+  delay(10);
+  motorWrite(-50, sweeperPins);
+//  delay(10);
+//  motorWrite(-50, sweeperPins);
+//  delay(10);
+//  motorWrite(-50, sweeperPins);
+  
+  digitalWrite(deviceLed, LOW);
+  while(!digitalRead(sweeperSensors[0]) == triggerState){};
+  digitalWrite(pedalLed, HIGH);
+  //delay(100); //delay till stop; ************************************************************
+  motorWrite(0, sweeperPins);
+  digitalWrite(deviceLed, HIGH); 
   preloadSequence();
 }
 
 //sweeper must be fully down on the right, and separator must be fully retracted
-void preloadSequence(){
+//************************************************************************************************
+void preloadSequence(){ //PRELOAD MOTOR SPEEDS IN THIS FUNCTION
 //  Serial.println("DO IT NOW");
 //  delay(2000);
   Serial.println("Preload sequence!");
   //engage the page
-  motorWrite(30, separatorPins);
+  motorWrite(50, separatorPins); //PRELOAD SPEED
   float force = 0;
   unsigned long  initialTime = millis();
   while(true){
     force = getAvgCurrent(analogRead(currentSensor));
-    Serial.println(force);
-    if((millis() - initialTime) > 100 && (force > forceThreshold)){
+    //Serial.println(force);
+    if(((millis() - initialTime) > 500 && (force > forceThreshold))){
       break;
     }
     
   }; //read the current from the motor to measure the force
-  motorWrite(-20, separatorPins); //begin retracting the arm 
-  delay(1500);  //this is the magic time to wait before bringing up the sweeper arm for preload
-  motorWrite(-50, sweeperPins);
+  delay(forceHoldTime);
+  motorWrite(-9, separatorPins); //begin retracting the arm //RETRACT SPEED
+  delay(preloadDelay);  //this is the magic time to wait before bringing up the sweeper arm for preload
+  motorWrite(0, separatorPins); //Stoping motor for test
+  motorWrite(55, sweeperPins);
+//  
+//  bool runSweeper = true;
+//  bool sweepFinished = false;
+//  bool runSeparator = true;
+//  bool sepFinished = false;
+//  while(!(sweepFinished && sepFinished)){
+//    runSweeper = !digitalRead(sweeperSensors[1]) == triggerState;
+//    runSeparator = !digitalRead(separatorEndstop) == triggerState;
+//    if(!runSweeper){
+//      if(!sweepFinished){
+//        motorWrite(0, sweeperPins);
+//        sweepFinished = true;
+//      }
+//    }
+//    if(!runSeparator){
+//      if(!sepFinished){
+//        motorWrite(0, separatorPins);
+//        Serial.print("sep done!");
+//        sepFinished = true;
+//      }      
+//    }
+  //Delay for a bit 
   bool runSweeper = true;
   bool sweepFinished = false;
   bool runSeparator = true;
   bool sepFinished = false;
-  while(!(sweepFinished && sepFinished)){
+  while(!sweepFinished){
     runSweeper = !digitalRead(sweeperSensors[1]) == triggerState;
-    runSeparator = !digitalRead(separatorEndstop) == triggerState;
     if(!runSweeper){
       if(!sweepFinished){
         motorWrite(0, sweeperPins);
         sweepFinished = true;
       }
     }
-    if(!runSeparator){
-      if(!sepFinished){
-        motorWrite(0, separatorPins);
-        Serial.print("sep done!");
-        sepFinished = true;
-      }      
-    }
   };  //move arm up
+  digitalWrite(deviceLed, LOW);
+  motorWrite(-20, separatorPins); 
+  delay(50);
+  
+  int numTrips = 0;
+  while(numTrips < 50){
+    if(digitalRead(separatorEndstop) == triggerState){
+      numTrips++;
+    }
+    else{
+      numTrips = 0;
+    }
+    Serial.println(numTrips);
+  }
+  motorWrite(0, separatorPins);
+  digitalWrite(deviceLed, HIGH);
+  
   
   Serial.println("Sequence Finished!");
 }
@@ -155,7 +204,7 @@ void preloadSequence(){
 void bookmarkSequence(){
   Serial.println("Bookmark Sequence!");
   //get the sweeper out of the way
-  motorWrite(-10, sweeperPins); 
+  motorWrite(10, sweeperPins); 
   while(!digitalRead(sweeperSensors[0]) == triggerState){};
   motorWrite(0, sweeperPins);
   
@@ -186,7 +235,6 @@ void motorWrite(int motorSpeed, int pins[]){
  else{  //its off
     digitalWrite(pins[1], LOW);
     digitalWrite(pins[2], LOW);
-    return;
  }
  motorSpeed = abs(motorSpeed);
  motorSpeed = constrain(motorSpeed, 0, 255);   // Just in case...
@@ -207,11 +255,11 @@ float getAvgCurrent(int newCurrent){
     sum += currentQueue[i-1];
   }
   currentQueue[0] = newCurrent;
-  Serial.print("total:  ");
-  Serial.println(sum);
+  //Serial.print("total:  ");
+  //Serial.println(sum);
   float avg = sum/MOVING_AVG_SIZE;
-  Serial.print("avg: ");
-  Serial.println(avg);
+  //Serial.print("avg: ");
+  //Serial.println(avg);
   return avg;
 }
 
