@@ -5,9 +5,9 @@
 int doubleTapThreshold = 400;
 bool triggerState = LOW;
 int batteryThreshold = 800;
-float forceThreshold = 0.023;             //current threshold for the analog read which signals sufficient pressure on the separator arm
-int forceHoldTime = 380;                      //amount of time (ms) the separator arm holds onto page
-int preloadDelay = 2700;                  //amount of time (ms) between separator arm retraction and sweeper preload
+float forceThreshold = 0.03;             //current threshold for the analog read which signals sufficient pressure on the separator arm
+int forceHoldTime = 500;                      //amount of time (ms) the separator arm holds onto page
+int preloadDelay = 2150;                  //amount of time (ms) between separator arm retraction and sweeper preload
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int deviceLed = A1;
@@ -93,12 +93,10 @@ void loop(){
  */
 void forwardSequence(){
   Serial.println("Forward Sequence");
-  //digitalWrite(deviceLed, HIGH);
   //flip the page
   motorWrite(100, sweeperPins);  //flipper motor forward
 
   while(!digitalRead(sweeperSensors[2]) == triggerState){};
-  digitalWrite(pedalLed, LOW);
   //motorWrite(0, sweeperPins); //flipper stopped
 
   
@@ -107,17 +105,10 @@ void forwardSequence(){
   //motorWrite(0, sweeperPins);
   delay(10);
   motorWrite(-50, sweeperPins);
-//  delay(10);
-//  motorWrite(-50, sweeperPins);
-//  delay(10);
-//  motorWrite(-50, sweeperPins);
   
-  digitalWrite(deviceLed, LOW);
   while(!digitalRead(sweeperSensors[0]) == triggerState){};
-  digitalWrite(pedalLed, HIGH);
   //delay(100); //delay till stop; ************************************************************
-  motorWrite(0, sweeperPins);
-  digitalWrite(deviceLed, HIGH); 
+  motorWrite(0, sweeperPins); 
   preloadSequence();
 }
 
@@ -137,8 +128,8 @@ void preloadSequence(){ //PRELOAD MOTOR SPEEDS IN THIS FUNCTION
     if(((millis() - initialTime) > 500 && (force > forceThreshold))){
       break;
     }
-    
   }; //read the current from the motor to measure the force
+  //motorWrite(0, separatorPins);
   delay(forceHoldTime);
   motorWrite(-9, separatorPins); //begin retracting the arm //RETRACT SPEED
   delay(preloadDelay);  //this is the magic time to wait before bringing up the sweeper arm for preload
@@ -179,7 +170,6 @@ void preloadSequence(){ //PRELOAD MOTOR SPEEDS IN THIS FUNCTION
       }
     }
   };  //move arm up
-  digitalWrite(deviceLed, LOW);
   motorWrite(-20, separatorPins); 
   delay(50);
   
@@ -194,7 +184,6 @@ void preloadSequence(){ //PRELOAD MOTOR SPEEDS IN THIS FUNCTION
     Serial.println(numTrips);
   }
   motorWrite(0, separatorPins);
-  digitalWrite(deviceLed, HIGH);
   
   
   Serial.println("Sequence Finished!");
