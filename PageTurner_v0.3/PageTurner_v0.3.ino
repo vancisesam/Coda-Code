@@ -193,13 +193,13 @@ void preloadSequence(){ //PRELOAD MOTOR SPEEDS IN THIS FUNCTION
 void bookmarkSequence(){
   Serial.println("Bookmark Sequence!");
   //get the sweeper out of the way
-  motorWrite(10, sweeperPins); 
+  motorWrite(-50, sweeperPins); 
   while(!digitalRead(sweeperSensors[0]) == triggerState){};
   motorWrite(0, sweeperPins);
   
   //flip the bookmark
   motorWrite(10, bookmarkPins);
-  while(!digitalRead(bookmarkSensors[1]) == triggerState){};  //move to the right
+  delay(500);
   motorWrite(-10, bookmarkPins);
   while(!digitalRead(bookmarkSensors[0]) == triggerState){};  //move back to the left
   motorWrite(0, bookmarkPins);
