@@ -5,9 +5,9 @@
 int doubleTapThreshold = 400;
 bool triggerState = LOW;
 int batteryThreshold = 800;
-float forceThreshold = 0.03;             //current threshold for the analog read which signals sufficient pressure on the separator arm
-int forceHoldTime = 500;                      //amount of time (ms) the separator arm holds onto page
-int preloadDelay = 2150;                  //amount of time (ms) between separator arm retraction and sweeper preload
+float forceThreshold = 0.04;             //current threshold for the analog read which signals sufficient pressure on the separator arm
+int forceHoldTime = 350;                      //amount of time (ms) the separator arm holds onto page
+int preloadDelay = 2300;                  //amount of time (ms) between separator arm retraction and sweeper preload
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int deviceLed = A1;
